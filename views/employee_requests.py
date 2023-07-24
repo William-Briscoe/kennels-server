@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from .models import Employee
+from .models import Employee, Location
 
 EMPLOYEES = [
     {
@@ -11,9 +11,40 @@ EMPLOYEES = [
 
 #grabs all employees
 def get_all_employees():
-    #will return all objects in EMPLOYEES
-    return EMPLOYEES
+    # Open a connection to the database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
 
+        # Just use these. It's a Black Box.
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # Write the SQL query to get the information you want
+        db_cursor.execute("""
+        SELECT
+            e.id,
+            e.name,
+            e.address,
+            e.location_id,
+            l.name AS location_name,
+            l.address AS location_address
+        FROM Employee e
+        JOIN Location l
+            ON l.id = e.location_id
+        """)
+
+        employees = []
+
+        dataset = db_cursor.fetchall()
+
+        for row in dataset:
+            employee = Employee(row['id'], row['name'], row['address'], row['location_id'])
+            location = Location(row['location_id'], row['location_name'], row['location_address'])
+
+            employee.location = location.__dict__
+
+            employees.append(employee.__dict__)
+
+    return employees
 
 #grabs specific employee
 def get_single_employee(id):
